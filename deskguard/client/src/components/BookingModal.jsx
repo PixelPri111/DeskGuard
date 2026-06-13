@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export default function BookingModal({ deskNumber, studentId, studentName, onClose, onBookingSuccess }) {
   const [step, setStep] = useState('details'); // 'details' | 'slots'
@@ -21,7 +21,7 @@ export default function BookingModal({ deskNumber, studentId, studentName, onClo
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`/api/bookings/slots/${deskNumber}`, {
+      const res = await api.get(`/api/bookings/slots/${deskNumber}`, {
         params: { studentId: formStudentId }
       });
       setSlots(res.data);
@@ -41,7 +41,7 @@ export default function BookingModal({ deskNumber, studentId, studentName, onClo
     setError('');
 
     try {
-      await axios.post('/api/bookings/create', {
+      await api.post('/api/bookings/create', {
         desk_number: deskNumber,
         student_id: formStudentId,
         student_name: formName,

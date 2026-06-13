@@ -1,13 +1,13 @@
-import axios from 'axios';
+import api from '../api';
 
 export default function StillHereModal({ deskNumber, onClose }) {
   async function handleStillHere() {
-    await axios.post('/api/desks/ping', { desk_number: deskNumber });
+    await api.post('/api/desks/ping', { desk_number: deskNumber });
     onClose();
   }
 
   async function handleRelease() {
-    await axios.post('/api/desks/release', { desk_number: deskNumber });
+    await api.post('/api/desks/release', { desk_number: deskNumber });
     localStorage.removeItem('myDesk');
     onClose();
   }

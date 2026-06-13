@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export default function MyBookings({ studentId }) {
   const [bookings, setBookings] = useState([]);
@@ -17,7 +17,7 @@ export default function MyBookings({ studentId }) {
 
   async function fetchBookings() {
     try {
-      const res = await axios.get(`/api/bookings/my-bookings/${studentId}`);
+      const res = await api.get(`/api/bookings/my-bookings/${studentId}`);
       setBookings(res.data);
       setLoading(false);
     } catch (e) {
@@ -27,7 +27,7 @@ export default function MyBookings({ studentId }) {
 
   async function handleCancel(bookingId) {
     try {
-      await axios.post('/api/bookings/cancel', { booking_id: bookingId });
+      await api.post('/api/bookings/cancel', { booking_id: bookingId });
       fetchBookings();
     } catch (e) {
       alert('Cancel failed');

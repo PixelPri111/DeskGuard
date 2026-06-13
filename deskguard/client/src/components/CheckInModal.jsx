@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export default function CheckInModal({ deskNumber, onClose, onCheckedIn }) {
   const [name, setName] = useState('');
@@ -14,7 +14,7 @@ export default function CheckInModal({ deskNumber, onClose, onCheckedIn }) {
     }
     setLoading(true);
     try {
-      await axios.post('/api/desks/checkin', {
+      await api.post('/api/desks/checkin', {
         desk_number: deskNumber,
         student_name: name,
         student_id: studentId,

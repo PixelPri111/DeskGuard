@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import CheckInModal from './CheckInModal';
-import axios from 'axios';
+import api from '../api';
 
 const STATUS_STYLES = {
   free: 'bg-green-500/20 border-green-500/50 hover:bg-green-500/30 cursor-pointer',
@@ -45,15 +45,15 @@ export default function DeskTileWithBooking({ desk, onBooking }) {
   }
 
   async function handleAway() {
-    await axios.post('/api/desks/away', { desk_number: desk.desk_number });
+    await api.post('/api/desks/away', { desk_number: desk.desk_number });
   }
 
   async function handleBack() {
-    await axios.post('/api/desks/back', { desk_number: desk.desk_number });
+    await api.post('/api/desks/back', { desk_number: desk.desk_number });
   }
 
   async function handleRelease() {
-    await axios.post('/api/desks/release', { desk_number: desk.desk_number });
+    await api.post('/api/desks/release', { desk_number: desk.desk_number });
     localStorage.removeItem('myDesk');
     setMyDeskNumber(null);
   }
