@@ -1,27 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../db');
+const { pool } = require('../db');
 
 module.exports = (io) => {
 
-  router.post('/reset', (req, res) => {
+  router.post('/reset', async (req, res) => {
     const { desk_number } = req.body;
-    db.prepare(`
-      UPDATE desks SET status = 'free',
-      student_name = NULL, student_id = NULL,
-      checked_in_at = NULL, away_since = NULL, last_ping_at = NULL
-      WHERE desk_number = ?
-    `).run(desk_number);
-    const allDesks = db.prepare('SELECT * FROM desks').all();
-    io.emit('desks_updated', allDesks);
-    res.json({ success: true });
+    try {
+      await pool.query(`
+        UPDATE desks SET status = 'free',
+        student_name = NULL, student_id = NULL,
+        checked_in_at = NULL, away_since = NULL, last_ping_at = NULL
+        WHERE desk_number = $1
+      `, [desk_number]);
+      const { rows } = await pool.query('SELECT * FROM desks');
+      io.emit('desks_updated', rows);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  router.get('/analytics', (req, res) => {
+  router.get('/analytics', async (req, res) => {
     try {
-      const sessions = db.prepare('SELECT check_in_time FROM sessions').all();
+      const { rows: sessions } = await pool.query('SELECT check_in_time FROM sessions');
       const hourlyData = Array(24).fill(0);
-      
+
       sessions.forEach(session => {
         if (session.check_in_time) {
           const hour = new Date(session.check_in_time).getHours();

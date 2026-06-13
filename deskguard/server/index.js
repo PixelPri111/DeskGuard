@@ -30,22 +30,29 @@ app.use(cors({
 }));
 app.use(express.json());
 
-initDB();
+async function main() {
+  await initDB();
 
-app.use('/api/desks', deskRoutes(io));
-app.use('/api/admin', adminRoutes(io));
-app.use('/api/bookings', bookingRoutes(io));
+  app.use('/api/desks', deskRoutes(io));
+  app.use('/api/admin', adminRoutes(io));
+  app.use('/api/bookings', bookingRoutes(io));
 
-io.on('connection', (socket) => {
-  console.log('🔌 Client connected:', socket.id);
-  socket.on('disconnect', () => {
-    console.log('❌ Client disconnected:', socket.id);
+  io.on('connection', (socket) => {
+    console.log('🔌 Client connected:', socket.id);
+    socket.on('disconnect', () => {
+      console.log('❌ Client disconnected:', socket.id);
+    });
   });
-});
 
-startSweeper(io);
+  startSweeper(io);
 
-const PORT = 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 DeskGuard server running on http://localhost:${PORT}`);
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, () => {
+    console.log(`🚀 DeskGuard server running on port ${PORT}`);
+  });
+}
+
+main().catch((err) => {
+  console.error('❌ Failed to start server:', err);
+  process.exit(1);
 });

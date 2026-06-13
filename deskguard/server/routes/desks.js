@@ -1,86 +1,104 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../db');
+const { pool } = require('../db');
 
-
-
-function emitUpdate(io) {
-  const allDesks = db.prepare('SELECT * FROM desks').all();
-  io.emit('desks_updated', allDesks);
+async function emitUpdate(io) {
+  const { rows } = await pool.query('SELECT * FROM desks');
+  io.emit('desks_updated', rows);
 }
 
 module.exports = (io) => {
 
-  router.get('/', (req, res) => {
-    const desks = db.prepare('SELECT * FROM desks').all();
-    res.json(desks);
+  router.get('/', async (req, res) => {
+    try {
+      const { rows } = await pool.query('SELECT * FROM desks');
+      res.json(rows);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  router.post('/checkin', (req, res) => {
+  router.post('/checkin', async (req, res) => {
     const { desk_number, student_name, student_id } = req.body;
     const now = new Date().toISOString();
     try {
-      db.prepare(`
+      await pool.query(`
         UPDATE desks SET
           status = 'occupied',
-          student_name = ?,
-          student_id = ?,
-          checked_in_at = ?,
-          last_ping_at = ?,
+          student_name = $1,
+          student_id = $2,
+          checked_in_at = $3,
+          last_ping_at = $4,
           away_since = NULL
-        WHERE desk_number = ? AND status = 'free'
-      `).run(student_name, student_id, now, now, desk_number);
-      emitUpdate(io);
+        WHERE desk_number = $5 AND status = 'free'
+      `, [student_name, student_id, now, now, desk_number]);
+      await emitUpdate(io);
       res.json({ success: true });
     } catch (e) {
       res.status(400).json({ error: e.message });
     }
   });
 
-  router.post('/away', (req, res) => {
+  router.post('/away', async (req, res) => {
     const { desk_number } = req.body;
     const now = new Date().toISOString();
-    db.prepare(`
-      UPDATE desks SET status = 'away', away_since = ?
-      WHERE desk_number = ?
-    `).run(now, desk_number);
-    emitUpdate(io);
-    res.json({ success: true });
+    try {
+      await pool.query(`
+        UPDATE desks SET status = 'away', away_since = $1
+        WHERE desk_number = $2
+      `, [now, desk_number]);
+      await emitUpdate(io);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  router.post('/back', (req, res) => {
+  router.post('/back', async (req, res) => {
     const { desk_number } = req.body;
     const now = new Date().toISOString();
-    db.prepare(`
-      UPDATE desks SET status = 'occupied',
-      away_since = NULL, last_ping_at = ?
-      WHERE desk_number = ?
-    `).run(now, desk_number);
-    emitUpdate(io);
-    res.json({ success: true });
+    try {
+      await pool.query(`
+        UPDATE desks SET status = 'occupied',
+        away_since = NULL, last_ping_at = $1
+        WHERE desk_number = $2
+      `, [now, desk_number]);
+      await emitUpdate(io);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  router.post('/release', (req, res) => {
+  router.post('/release', async (req, res) => {
     const { desk_number } = req.body;
-    db.prepare(`
-      UPDATE desks SET status = 'free',
-      student_name = NULL, student_id = NULL,
-      checked_in_at = NULL, away_since = NULL, last_ping_at = NULL
-      WHERE desk_number = ?
-    `).run(desk_number);
-    emitUpdate(io);
-    res.json({ success: true });
+    try {
+      await pool.query(`
+        UPDATE desks SET status = 'free',
+        student_name = NULL, student_id = NULL,
+        checked_in_at = NULL, away_since = NULL, last_ping_at = NULL
+        WHERE desk_number = $1
+      `, [desk_number]);
+      await emitUpdate(io);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
-  router.post('/ping', (req, res) => {
+  router.post('/ping', async (req, res) => {
     const { desk_number } = req.body;
     const now = new Date().toISOString();
-    db.prepare(`
-      UPDATE desks SET status = 'occupied', last_ping_at = ?
-      WHERE desk_number = ?
-    `).run(now, desk_number);
-    emitUpdate(io);
-    res.json({ success: true });
+    try {
+      await pool.query(`
+        UPDATE desks SET status = 'occupied', last_ping_at = $1
+        WHERE desk_number = $2
+      `, [now, desk_number]);
+      await emitUpdate(io);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   return router;
