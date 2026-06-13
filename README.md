@@ -383,3 +383,12 @@ node -e "const {db} = require('./db'); db.prepare('DELETE FROM bookings').run();
 ## 📄 License
 
 MIT — free to use, modify, and build upon.
+
+---
+
+## 👤 Author
+ 
+**Priyasha Goyal**
+- GitHub: https://github.com/PixelPri111
+
+---
