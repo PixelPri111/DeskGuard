@@ -5,6 +5,7 @@ const cors = require('cors');
 const { initDB } = require('./db');
 const deskRoutes = require('./routes/desks');
 const adminRoutes = require('./routes/admin');
+const bookingRoutes = require('./routes/bookings');
 const { startSweeper } = require('./jobs/sweeper');
 
 const app = express();
@@ -24,6 +25,7 @@ initDB();
 
 app.use('/api/desks', deskRoutes(io));
 app.use('/api/admin', adminRoutes(io));
+app.use('/api/bookings', bookingRoutes(io));
 
 io.on('connection', (socket) => {
   console.log('🔌 Client connected:', socket.id);

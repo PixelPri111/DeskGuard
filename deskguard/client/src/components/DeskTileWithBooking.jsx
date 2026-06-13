@@ -16,7 +16,7 @@ const STATUS_ICONS = {
   abandoned: '⚫',
 };
 
-export default function DeskTile({ desk }) {
+export default function DeskTileWithBooking({ desk, onBooking }) {
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [myDeskNumber, setMyDeskNumber] = useState(
     localStorage.getItem('myDesk') || null
@@ -25,7 +25,6 @@ export default function DeskTile({ desk }) {
 
   const isMyDesk = myDeskNumber === desk.desk_number;
 
-  // Away countdown timer
   useEffect(() => {
     if (desk.status !== 'away' || !desk.away_since) {
       setAwayTimeLeft(null);
@@ -33,7 +32,7 @@ export default function DeskTile({ desk }) {
     }
     const interval = setInterval(() => {
       const elapsed = Date.now() - new Date(desk.away_since).getTime();
-      const remaining = Math.max(0, 2 * 60 * 1000 - elapsed); // 2 min in demo
+      const remaining = Math.max(0, 2 * 60 * 1000 - elapsed);
       const mins = Math.floor(remaining / 60000);
       const secs = Math.floor((remaining % 60000) / 1000);
       setAwayTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
@@ -59,8 +58,10 @@ export default function DeskTile({ desk }) {
     setMyDeskNumber(null);
   }
 
-  function handleCheckedIn(deskNum) {
+  function handleCheckedIn(deskNum, studentId, studentName) {
     localStorage.setItem('myDesk', deskNum);
+    localStorage.setItem('myStudentId', studentId);
+    localStorage.setItem('myStudentName', studentName);
     setMyDeskNumber(deskNum);
   }
 
@@ -74,13 +75,11 @@ export default function DeskTile({ desk }) {
           ${STATUS_STYLES[desk.status]}
         `}
       >
-        {/* Header */}
         <div className="flex justify-between items-start">
           <span className="font-bold text-white text-sm">{desk.desk_number}</span>
           <span className="text-base">{STATUS_ICONS[desk.status]}</span>
         </div>
 
-        {/* Student name */}
         <div>
           {desk.student_name && (
             <p className="text-xs text-slate-300 truncate">{desk.student_name}</p>
@@ -91,7 +90,15 @@ export default function DeskTile({ desk }) {
           )}
         </div>
 
-        {/* Away button for my occupied desk */}
+        {desk.status === 'free' && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onBooking(desk.desk_number); }}
+            className="text-xs text-slate-300 hover:text-white underline text-left"
+          >
+            📅 Book Slot
+          </button>
+        )}
+
         {isMyDesk && desk.status === 'occupied' && (
           <div className="absolute -top-3 -right-2">
             <button
@@ -101,7 +108,6 @@ export default function DeskTile({ desk }) {
           </div>
         )}
 
-        {/* Back button for my away desk */}
         {isMyDesk && desk.status === 'away' && (
           <div className="absolute -top-3 -right-2">
             <button
@@ -111,7 +117,6 @@ export default function DeskTile({ desk }) {
           </div>
         )}
 
-        {/* Release button */}
         {isMyDesk && (desk.status === 'occupied' || desk.status === 'away') && (
           <button
             onClick={(e) => { e.stopPropagation(); handleRelease(); }}
@@ -130,4 +135,3 @@ export default function DeskTile({ desk }) {
     </>
   );
 }
-

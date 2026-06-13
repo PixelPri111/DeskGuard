@@ -19,7 +19,7 @@ export default function CheckInModal({ deskNumber, onClose, onCheckedIn }) {
         student_name: name,
         student_id: studentId,
       });
-      onCheckedIn(deskNumber);
+      onCheckedIn(deskNumber, studentId, name);
       onClose();
     } catch (e) {
       setError('Desk already taken. Please choose another.');

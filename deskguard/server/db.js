@@ -4,6 +4,7 @@ const path = require('path');
 const db = new Database(path.join(__dirname, 'deskguard.sqlite'));
 
 function initDB() {
+  // Create desks table
   db.exec(`
     CREATE TABLE IF NOT EXISTS desks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,14 +18,18 @@ function initDB() {
     )
   `);
 
+  // Create bookings table (NEW)
   db.exec(`
-    CREATE TABLE IF NOT EXISTS sessions (
+    CREATE TABLE IF NOT EXISTS bookings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       desk_number TEXT NOT NULL,
-      student_name TEXT,
-      student_id TEXT,
-      check_in_time DATETIME NOT NULL,
-      release_time DATETIME
+      student_id TEXT NOT NULL,
+      student_name TEXT NOT NULL,
+      booking_start DATETIME NOT NULL,
+      booking_end DATETIME NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(desk_number) REFERENCES desks(desk_number)
     )
   `);
 

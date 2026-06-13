@@ -1,6 +1,6 @@
-import DeskTile from './DeskTile';
+import DeskTileWithBooking from './DeskTileWithBooking';
 
-export default function DeskMap({ desks }) {
+export default function DeskMap({ desks, onBooking }) {
   const rows = ['A', 'B', 'C', 'D'];
 
   return (
@@ -19,11 +19,15 @@ export default function DeskMap({ desks }) {
         {rows.map(row => (
           <div key={row} className="flex items-center gap-3">
             <span className="text-slate-500 font-bold w-6 text-sm">Row {row}</span>
-            <div className="flex gap-3 flex-1">
+            <div className="flex gap-3 flex-1 flex-wrap">
               {desks
                 .filter(d => d.desk_number.startsWith(row))
                 .map(desk => (
-                  <DeskTile key={desk.desk_number} desk={desk} />
+                  <DeskTileWithBooking 
+                    key={desk.desk_number} 
+                    desk={desk}
+                    onBooking={onBooking}
+                  />
                 ))}
             </div>
           </div>
