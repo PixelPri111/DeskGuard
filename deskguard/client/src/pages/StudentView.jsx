@@ -54,10 +54,6 @@ export default function StudentView({ desks }) {
   const myDeskData = desks.find(d => d.desk_number === myDeskNumber);
 
   function openBookingModal(deskNum) {
-    if (!myStudentId) {
-      alert('Check in first to book desks');
-      return;
-    }
     setBookingDesk(deskNum);
     setShowBooking(true);
   }
