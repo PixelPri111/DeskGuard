@@ -4,6 +4,8 @@
 
 DeskGuard is a real-time library seat management platform built to eliminate desk hoarding and make study space allocation fair and transparent. Students get a live view of every desk in the library, can check in instantly, mark themselves away, book future slots up to a week in advance — and the system automatically reclaims abandoned desks so no seat stays blocked unnecessarily.
 
+🌐 **Live Demo:** [https://deskguard-client.onrender.com](https://deskguard-client.onrender.com)
+
 ---
 
 ## 🚨 Problem Statement
@@ -120,35 +122,37 @@ This dual-layer validation means a student can never accidentally (or intentiona
 
 ## 🗃️ Database Schema
 
+Hosted on **Supabase (PostgreSQL)**. Tables are created automatically on first server boot via `initDB()`.
+
 **`desks` table**
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | INTEGER PK | Auto-increment |
+| `id` | SERIAL PK | Auto-increment |
 | `desk_number` | TEXT UNIQUE | e.g. `A1`, `B3` |
 | `status` | TEXT | `free`, `occupied`, `away`, `abandoned` |
 | `student_name` | TEXT | Currently occupying student |
 | `student_id` | TEXT | Student's ID |
-| `checked_in_at` | DATETIME | When the session started |
-| `away_since` | DATETIME | When Away mode was activated |
-| `last_ping_at` | DATETIME | Last activity timestamp (used by sweeper) |
+| `checked_in_at` | TIMESTAMP | When the session started |
+| `away_since` | TIMESTAMP | When Away mode was activated |
+| `last_ping_at` | TIMESTAMP | Last activity timestamp (used by sweeper) |
 
 **`bookings` table**
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | INTEGER PK | Auto-increment |
+| `id` | SERIAL PK | Auto-increment |
 | `desk_number` | TEXT | FK → desks |
 | `student_id` | TEXT | Who booked |
 | `student_name` | TEXT | Who booked |
-| `booking_start` | DATETIME | Slot start (ISO 8601) |
-| `booking_end` | DATETIME | Slot end (ISO 8601) |
+| `booking_start` | TIMESTAMP | Slot start (ISO 8601) |
+| `booking_end` | TIMESTAMP | Slot end (ISO 8601) |
 | `status` | TEXT | `pending`, `completed`, `cancelled` |
-| `created_at` | DATETIME | When the booking was made |
+| `created_at` | TIMESTAMP | When the booking was made |
 
-**`sessions` table** (auto-managed via SQLite triggers)
+**`sessions` table** (auto-managed via PostgreSQL triggers)
 
-Automatically populated on every check-in and check-out via database triggers defined in `routes/desks.js`. Feeds the peak hour analytics endpoint.
+Automatically populated on every check-in and check-out via database triggers defined in `db.js`. Feeds the peak hour analytics endpoint.
 
 ---
 
@@ -187,22 +191,22 @@ Automatically populated on every check-in and check-out via database triggers de
 ## 🏗️ System Architecture
 
 ```
-React + Vite (port 5173)
+React + Vite (Render Static)
     │
     ├── Axios          → REST API calls
     └── Socket.IO client → real-time desk/booking updates
             │
             ▼
-Node.js + Express (port 5000)
+Node.js + Express (Render Web Service)
     │
-    ├── /api/desks     → desks.js (with SQLite triggers for session logging)
+    ├── /api/desks     → desks.js
     ├── /api/bookings  → bookings.js
     ├── /api/admin     → admin.js
     │
     ├── Socket.IO server  → emits desks_updated, bookings_updated
     ├── sweeper.js        → setInterval every 10s, handles lifecycle automation
     │
-    └── better-sqlite3 → deskguard.sqlite (single file, zero config)
+    └── pg (node-postgres) → Supabase PostgreSQL (hosted, cloud DB)
 ```
 
 ---
@@ -233,12 +237,12 @@ deskguard/
 │
 └── server/
     ├── routes/
-    │   ├── desks.js       — desk CRUD + SQLite triggers for session logging
+    │   ├── desks.js       — desk CRUD + async pool.query calls
     │   ├── bookings.js    — slot generation, booking creation, conflict checks
     │   └── admin.js       — reset + analytics
     ├── jobs/
     │   └── sweeper.js     — background lifecycle automation (away, abandon, booking auto-check-in)
-    ├── db.js              — database init, table creation, desk seeding
+    ├── db.js              — PostgreSQL pool, initDB(), table creation, PG triggers, desk seeding
     ├── index.js           — Express server, Socket.IO setup, route mounting
     └── package.json
 ```
@@ -257,8 +261,11 @@ deskguard/
 | QR support | react-qr-code | 2.2 |
 | Backend | Node.js + Express | 5 |
 | Real-time | Socket.IO | 4.8 |
-| Database | better-sqlite3 (SQLite) | 12 |
+| Database client | pg (node-postgres) | 8 |
+| Database | PostgreSQL (Supabase) | — |
 | Dev server | nodemon | 3 |
+| Backend hosting | Render.com | — |
+| Frontend hosting | Render Static | — |
 
 ---
 
@@ -268,6 +275,7 @@ deskguard/
 
 - Node.js 18+
 - npm 9+
+- A [Supabase](https://supabase.com) project (free tier works fine)
 
 ```bash
 node --version   # should be 18+
@@ -277,11 +285,21 @@ npm --version    # should be 9+
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/PixelPri111/DeskGuard.git
 cd deskguard
 ```
 
-### 2. Start the Backend
+### 2. Set Up Environment Variables
+
+Create a `.env` file inside the `server/` folder:
+
+```
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.xxxx.supabase.co:5432/postgres
+```
+
+Get this from your Supabase project → **Connect** → **Transaction pooler** URI.
+
+### 3. Start the Backend
 
 ```bash
 cd server
@@ -293,12 +311,12 @@ Expected output:
 ```
 ✅ Seeded 20 desks
 🧹 Sweeper started in DEMO mode
-🚀 DeskGuard server running on http://localhost:5000
+🚀 DeskGuard server running on port 5000
 ```
 
-> The SQLite database file (`deskguard.sqlite`) is created automatically on first run. No setup required.
+> Tables and desk seeding happen automatically on first boot — no manual SQL needed.
 
-### 3. Start the Frontend
+### 4. Start the Frontend
 
 Open a new terminal tab:
 
@@ -314,7 +332,7 @@ VITE ready in xxx ms
 Local: http://localhost:5173/
 ```
 
-### 4. Open the App
+### 5. Open the App
 
 | Interface | URL |
 |-----------|-----|
@@ -340,20 +358,46 @@ Local: http://localhost:5173/
 
 ## 🔧 Inspecting the Database
 
-If you want to inspect stored data directly:
+You can view and manage data directly from the **Supabase dashboard**:
 
-```bash
-cd server
+1. Go to [supabase.com](https://supabase.com) → your DeskGuard project
+2. Click **Table Editor** in the left sidebar
+3. Browse `desks`, `bookings`, and `sessions` tables directly
 
-# View all bookings
-node -e "const {db} = require('./db'); console.table(db.prepare('SELECT * FROM bookings').all())"
+Or use the **SQL Editor** in Supabase for custom queries:
 
-# View all desks
-node -e "const {db} = require('./db'); console.table(db.prepare('SELECT * FROM desks').all())"
+```sql
+-- View all bookings
+SELECT * FROM bookings ORDER BY created_at DESC;
 
-# Clear all bookings
-node -e "const {db} = require('./db'); db.prepare('DELETE FROM bookings').run(); console.log('Cleared')"
+-- View all desks
+SELECT * FROM desks;
+
+-- Clear all bookings
+DELETE FROM bookings;
 ```
+
+---
+
+## ☁️ Deployment
+
+The live app is deployed fully on **Render** + **Supabase**:
+
+| Service | Platform | URL |
+|---------|----------|-----|
+| Frontend | Render Static Site | https://deskguard-client.onrender.com |
+| Backend | Render Web Service | https://deskguard-server.onrender.com |
+| Database | Supabase (PostgreSQL) | Managed cloud DB |
+
+**To deploy your own instance:**
+
+1. Create a Supabase project and copy the connection URI (Transaction pooler format)
+2. Push the repo to GitHub
+3. Create a Render Web Service pointing to `server/` — add `DATABASE_URL` as an environment variable
+4. Create a Render Static Site pointing to `client/` — add `VITE_API_URL` pointing to your server URL
+5. Deploy — `initDB()` runs on boot and sets up all tables automatically
+
+> **Note:** Render free tier spins down after inactivity. Supabase free tier pauses after 7 days of no activity. Both wake up automatically on the next request (first request may take ~5–10 seconds).
 
 ---
 
@@ -387,8 +431,6 @@ MIT — free to use, modify, and build upon.
 ---
 
 ## 👤 Author
- 
+
 **Priyasha Goyal**
 - GitHub: https://github.com/PixelPri111
-
----
