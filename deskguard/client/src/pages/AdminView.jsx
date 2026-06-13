@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 const STATUS_COLORS = {
   free: 'bg-green-500/20 text-green-400',
@@ -20,7 +20,7 @@ export default function AdminView({ desks, onLogout }) {
 
   async function fetchBookings() {
     try {
-      const res = await axios.get('/api/bookings/all');
+      const res = await api.get('/api/bookings/all');
       setBookings(res.data);
       setLoadingBookings(false);
     } catch (e) {
@@ -29,7 +29,7 @@ export default function AdminView({ desks, onLogout }) {
   }
 
   async function handleReset(deskNumber) {
-    await axios.post('/api/admin/reset', { desk_number: deskNumber });
+    await api.post('/api/admin/reset', { desk_number: deskNumber });
   }
 
   const stats = {

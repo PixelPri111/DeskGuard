@@ -5,7 +5,6 @@ import StudentView from './pages/StudentView';
 import AdminView from './pages/AdminView';
 import AdminLogin from './pages/AdminLogin';
 
-// const socket = io('http://localhost:5000');
 const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
 export default function App() {
@@ -22,7 +21,6 @@ export default function App() {
       setDesks(updatedDesks);
     });
 
-    // fetch('/api/desks')
     fetch(`${import.meta.env.VITE_API_URL || ''}/api/desks`)
       .then(r => r.json())
       .then(data => setDesks(data));
