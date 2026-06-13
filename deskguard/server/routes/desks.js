@@ -2,6 +2,35 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../db');
 
+// Ensure database triggers are created for managing session logging
+db.exec(`
+  CREATE TRIGGER IF NOT EXISTS start_session_on_checkin
+  AFTER UPDATE OF status ON desks
+  FOR EACH ROW
+  WHEN NEW.status = 'occupied' AND OLD.status = 'free'
+  BEGIN
+    INSERT INTO sessions (desk_number, student_name, student_id, check_in_time)
+    VALUES (NEW.desk_number, NEW.student_name, NEW.student_id, NEW.checked_in_at);
+  END;
+`);
+
+db.exec(`
+  CREATE TRIGGER IF NOT EXISTS end_session_on_release
+  AFTER UPDATE OF status ON desks
+  FOR EACH ROW
+  WHEN NEW.status = 'free' AND OLD.status != 'free'
+  BEGIN
+    UPDATE sessions
+    SET release_time = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+    WHERE id = (
+      SELECT id FROM sessions
+      WHERE desk_number = OLD.desk_number AND release_time IS NULL
+      ORDER BY id DESC
+      LIMIT 1
+    );
+  END;
+`);
+
 function emitUpdate(io) {
   const allDesks = db.prepare('SELECT * FROM desks').all();
   io.emit('desks_updated', allDesks);

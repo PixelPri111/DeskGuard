@@ -17,6 +17,17 @@ function initDB() {
     )
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      desk_number TEXT NOT NULL,
+      student_name TEXT,
+      student_id TEXT,
+      check_in_time DATETIME NOT NULL,
+      release_time DATETIME
+    )
+  `);
+
   const count = db.prepare('SELECT COUNT(*) as count FROM desks').get();
   if (count.count === 0) {
     const rows = ['A','B','C','D'];
